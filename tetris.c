@@ -1,56 +1,188 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 
-// Desafio Tetris Stack
-// Tema 3 - Integração de Fila e Pilha
-// Este código inicial serve como base para o desenvolvimento do sistema de controle de peças.
-// Use as instruções de cada nível para desenvolver o desafio.
+#define CAPACIDADE_FILA 5
 
+// -----------------------------------------------------------------------------
+// 1. ESTRUTURAS DE DADOS
+// -----------------------------------------------------------------------------
+
+// Struct que representa cada peca do Tetris
+typedef struct {
+    char nome; // Tipo da peca: 'I', 'O', 'T', 'L'
+    int id;    // Identificador unico sequencial
+} Peca;
+
+// Struct para controle da Fila Circular
+typedef struct {
+    Peca itens[CAPACIDADE_FILA];
+    int inicio;     // Indice do primeiro elemento da fila
+    int fim;        // Indice da proxima posicao livre
+    int total;      // Quantidade atual de elementos na fila
+} FilaCircular;
+
+// Variável global para gerar IDs unicos sequenciais
+int contadorIdPeca = 0;
+
+// -----------------------------------------------------------------------------
+// PROTÓTIPOS DAS FUNÇÕES
+// -----------------------------------------------------------------------------
+void inicializarFila(FilaCircular *fila);
+Peca gerarPeca(void);
+int enqueue(FilaCircular *fila, Peca peca);
+int dequeue(FilaCircular *fila, Peca *pecaRemovida);
+void exibirFila(const FilaCircular *fila);
+void limparBuffer(void);
+
+// -----------------------------------------------------------------------------
+// FUNÇÃO PRINCIPAL (MENU INTERATIVO)
+// -----------------------------------------------------------------------------
 int main() {
+    // Inicializa a semente para geracao aleatoria dos tipos de peca
+    srand((unsigned int)time(NULL));
 
-    // 🧩 Nível Novato: Fila de Peças Futuras
-    //
-    // - Crie uma struct Peca com os campos: tipo (char) e id (int).
-    // - Implemente uma fila circular com capacidade para 5 peças.
-    // - Crie funções como inicializarFila(), enqueue(), dequeue(), filaCheia(), filaVazia().
-    // - Cada peça deve ser gerada automaticamente com um tipo aleatório e id sequencial.
-    // - Exiba a fila após cada ação com uma função mostrarFila().
-    // - Use um menu com opções como:
-    //      1 - Jogar peça (remover da frente)
-    //      0 - Sair
-    // - A cada remoção, insira uma nova peça ao final da fila.
+    FilaCircular filaPecas;
+    inicializarFila(&filaPecas);
 
+    // Preenche a fila inicial com 5 pecas geradas automaticamente
+    for (int i = 0; i < CAPACIDADE_FILA; i++) {
+        enqueue(&filaPecas, gerarPeca());
+    }
 
+    int opcao;
 
-    // 🧠 Nível Aventureiro: Adição da Pilha de Reserva
-    //
-    // - Implemente uma pilha linear com capacidade para 3 peças.
-    // - Crie funções como inicializarPilha(), push(), pop(), pilhaCheia(), pilhaVazia().
-    // - Permita enviar uma peça da fila para a pilha (reserva).
-    // - Crie um menu com opção:
-    //      2 - Enviar peça da fila para a reserva (pilha)
-    //      3 - Usar peça da reserva (remover do topo da pilha)
-    // - Exiba a pilha junto com a fila após cada ação com mostrarPilha().
-    // - Mantenha a fila sempre com 5 peças (repondo com gerarPeca()).
+    do {
+        printf("\n========================================\n");
+        printf("         TETRIS STACK - BYTEBROS        \n");
+        printf("========================================\n");
+        
+        // Exibe o estado atual da fila de pecas
+        exibirFila(&filaPecas);
 
+        printf("\nOpcoes de acao:\n");
+        printf(" 1. Jogar peca (dequeue)\n");
+        printf(" 2. Inserir nova peca (enqueue)\n");
+        printf(" 0. Sair\n");
+        printf("----------------------------------------\n");
+        printf("Escolha um comando: ");
 
-    // 🔄 Nível Mestre: Integração Estratégica entre Fila e Pilha
-    //
-    // - Implemente interações avançadas entre as estruturas:
-    //      4 - Trocar a peça da frente da fila com o topo da pilha
-    //      5 - Trocar os 3 primeiros da fila com as 3 peças da pilha
-    // - Para a opção 4:
-    //      Verifique se a fila não está vazia e a pilha tem ao menos 1 peça.
-    //      Troque os elementos diretamente nos arrays.
-    // - Para a opção 5:
-    //      Verifique se a pilha tem exatamente 3 peças e a fila ao menos 3.
-    //      Use a lógica de índice circular para acessar os primeiros da fila.
-    // - Sempre valide as condições antes da troca e informe mensagens claras ao usuário.
-    // - Use funções auxiliares, se quiser, para modularizar a lógica de troca.
-    // - O menu deve ficar assim:
-    //      4 - Trocar peça da frente com topo da pilha
-    //      5 - Trocar 3 primeiros da fila com os 3 da pilha
+        if (scanf("%d", &opcao) != 1) {
+            opcao = -1;
+        }
+        limparBuffer();
 
+        switch (opcao) {
+            case 1: {
+                Peca removida;
+                if (dequeue(&filaPecas, &removida)) {
+                    printf("\n[AÇAO] Peca [%c %d] foi jogada no tabuleiro!\n", 
+                           removida.nome, removida.id);
+                } else {
+                    printf("\n[AVISO] A fila esta vazia! Nenhuma peca para jogar.\n");
+                }
+                break;
+            }
+
+            case 2: {
+                Peca nova = gerarPeca();
+                if (enqueue(&filaPecas, nova)) {
+                    printf("\n[AÇAO] Nova peca [%c %d] entrou na fila!\n", 
+                           nova.nome, nova.id);
+                } else {
+                    printf("\n[AVISO] A fila esta cheia (%d/%d)! Jogue uma peca primeiro.\n", 
+                           filaPecas.total, CAPACIDADE_FILA);
+                }
+                break;
+            }
+
+            case 0:
+                printf("\nEncerrando controle da fila. Ate a proxima partida!\n");
+                break;
+
+            default:
+                printf("\n[ERRO] Opcao invalida! Escolha 1, 2 ou 0.\n");
+                break;
+        }
+
+    } while (opcao != 0);
 
     return 0;
 }
 
+// -----------------------------------------------------------------------------
+// IMPLEMENTAÇÃO DA FILA CIRCULAR
+// -----------------------------------------------------------------------------
+
+// Inicializa os ponteiros e o contador da fila
+void inicializarFila(FilaCircular *fila) {
+    fila->inicio = 0;
+    fila->fim = 0;
+    fila->total = 0;
+}
+
+// Gera automaticamente uma nova peca com formato aleatorio e ID sequencial
+Peca gerarPeca(void) {
+    char tipos[] = {'I', 'O', 'T', 'L'};
+    Peca novaPeca;
+    
+    // Seleciona um dos 4 tipos de forma aleatoria
+    novaPeca.nome = tipos[rand() % 4];
+    
+    // Atribui o proximo ID disponivel
+    novaPeca.id = contadorIdPeca++;
+    
+    return novaPeca;
+}
+
+// Insere uma peca no final da fila (Enqueue)
+int enqueue(FilaCircular *fila, Peca peca) {
+    if (fila->total >= CAPACIDADE_FILA) {
+        return 0; // Fila cheia
+    }
+
+    fila->itens[fila->fim] = peca;
+    
+    // Aritmetica circular para o ponteiro do fim
+    fila->fim = (fila->fim + 1) % CAPACIDADE_FILA;
+    fila->total++;
+
+    return 1; // Sucesso
+}
+
+// Remove a peca da frente da fila (Dequeue)
+int dequeue(FilaCircular *fila, Peca *pecaRemovida) {
+    if (fila->total == 0) {
+        return 0; // Fila vazia
+    }
+
+    *pecaRemovida = fila->itens[fila->inicio];
+
+    // Aritmetica circular para o ponteiro do inicio
+    fila->inicio = (fila->inicio + 1) % CAPACIDADE_FILA;
+    fila->total--;
+
+    return 1; // Sucesso
+}
+
+// Exibe a fila formatada: Fila de peças: [T 0] [O 1] [L 2] [I 3] [I 4]
+void exibirFila(const FilaCircular *fila) {
+    printf("\nFila de pecas: ");
+
+    if (fila->total == 0) {
+        printf("(vazia)");
+    } else {
+        // Percorre a fila circular a partir da posicao inicio
+        for (int i = 0; i < fila->total; i++) {
+            int idx = (fila->inicio + i) % CAPACIDADE_FILA;
+            printf("[%c %d] ", fila->itens[idx].nome, fila->itens[idx].id);
+        }
+    }
+    printf("\n");
+}
+
+// Auxiliar para limpar o buffer do teclado
+void limparBuffer(void) {
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF);
+}
